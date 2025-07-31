@@ -1,0 +1,42 @@
+import openai import json
+
+def send_recon_report_to_gpt(api_key: str, report_data: dict) -> str: """ Sends a recon report JSON to GPT-4 and returns the analysis. """ openai.api_key = api_key
+
+system_prompt = """
+You are Zero Day GPT, a cybersecurity assistant skilled in vulnerability triage,
+exploit evaluation, and ethical disclosure. Analyze the provided recon data for
+potential CVE-style findings or bounty-eligible reports.
+"""
+
+user_prompt = f"""
+Please analyze this reconnaissance JSON report:
+
+```json
+{json.dumps(report_data, indent=2)}
+```
+
+Return your analysis including:
+- Possible vulnerabilities or exposures
+- Exploitability
+- Bug bounty eligibility (with reasoning)
+- Suggested next steps
+"""
+
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+)
+
+return response["choices"][0]["message"]["content"]
+
+Example usage
+
+if name == "main": report_json = { "summary": "Exposed internal logging aggregator via TLS", "domain": "yoti.com", "ips": ["18.224.238.101", "18.134.165.193"], "tls_ports": [443, 14000], "fingerprints": [ "sha256:3d3d64ef537443b14fc373435bc00f2478572ecedc6c8aed97356c832d8a7458" ], "tls_cert_names": [ "log-aggregator1.support.svc.prod-aws.usa.internal.yoti.com" ], "exploitability": "Internal AWS node exposed to external probing" }
+
+api_key = "sk-your-openai-key"
+result = send_recon_report_to_gpt(api_key, report_json)
+print(result)
+
